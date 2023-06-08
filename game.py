@@ -1,6 +1,8 @@
 import pygame
 import time
 import random
+import numpy as np
+from abc import ABC, abstractmethod
 
 from snake import Snake
 from fruit import Fruit
@@ -12,12 +14,13 @@ green = pygame.Color(0, 255, 0)
 blue = pygame.Color(0, 0, 255)
 
 
-class Game():
+class BaseGame(ABC):
 
-    def __init__(self, wx=720, wy=480, title="Snake"):
+    def __init__(self, wx=720, wy=480, title="Snake", spd=15):
         self.wx = wx
         self.wy = wy
         self.score = 0
+        self.spd = spd
         self.snake = Snake()
         self.fruit = Fruit(pos=(random.randrange(1, (self.wx//10)) * 10,
                                 random.randrange(1, (self.wy//10)) * 10))
@@ -27,6 +30,92 @@ class Game():
 
         self.game_window = pygame.display.set_mode((self.wx, self.wy))
         self.fps = pygame.time.Clock()
+
+
+    def create_new_fruit(self):
+        x=random.randrange(1, (self.wx//10)) * 10
+        y=random.randrange(1, (self.wy//10)) * 10
+
+        while([x,y] in self.snake.body):
+            x=random.randrange(1, (self.wx//10)) * 10
+            y=random.randrange(1, (self.wy//10)) * 10
+
+        self.fruit = Fruit((x,y))
+    
+    def check_head_fruit(self):
+        if self.snake.pos[0] == self.fruit.pos[0] and self.snake.pos[1] == self.fruit.pos[1]:
+            self.score += 10
+            self.snake.add_body()
+            self.create_new_fruit()
+
+    def check_collide(self):
+        if self.snake.pos[0] < 0 or self.snake.pos[0] > self.wx-10 or self.snake.pos[1] < 0 or self.snake.pos[1] > self.wy-10:
+            return True
+
+        if self.snake.pos in self.snake.body[:-1]:
+            return True
+        
+        return False
+
+
+
+
+class Game_AI(BaseGame):
+
+    def __init__(self, wx=720, wy=480, title="Snake", spd=15):
+        super().__init__(wx,wy,title,spd)
+        self.direction = 1
+
+
+    def game_step(self, action):
+        """action = [Devant, Droite, Gauche]"""
+
+        reward = 0
+        game_over = False
+        list_dir = [1, 2, 3, 4] # Droite, Bas, Gauche, Haut
+        index = list_dir.index[self.direction]
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        if np.array_equal(action, [1, 0, 0]):
+            dir = list_dir[index]
+        elif np.array_equal(action, [0, 1, 0]):
+            dir = list_dir[(index+1)%4]
+        elif np.array_equal(action, [0, 0, 1]):
+            dir = list_dir[(index-1)%4]
+
+        self.direction = dir
+
+        match dir:
+            case 1:
+                self.snake.move_right()
+            case 2:
+                self.snake.move_down()
+            case 3: 
+                self.snake.move_left()
+            case 4: self.snake.move_right()
+
+        self.check_head_fruit()
+        
+        if self.check_collide():
+            reward = -1
+            game_over = True
+
+            return reward, game_over, self.score
+        
+        self.update_ui()
+            
+
+
+
+
+class Game(BaseGame):
+
+    def __init__(self, wx=720, wy=480, title="Snake", spd=15):
+        super().__init__(wx, wy, title, spd)
 
 
     def show_score(self, color=white, font='times new roman', size=20):
@@ -51,16 +140,19 @@ class Game():
         pygame.quit()
         quit()
 
-    def create_new_fruit(self):
-        x=random.randrange(1, (self.wx//10)) * 10
-        y=random.randrange(1, (self.wy//10)) * 10
 
-        while([x,y] in self.snake.body):
-            x=random.randrange(1, (self.wx//10)) * 10
-            y=random.randrange(1, (self.wy//10)) * 10
-
-        self.fruit = Fruit((x,y))
-
+    def update_ui(self):
+        self.game_window.fill(black)
+        for pos in self.snake.body:
+            pygame.draw.rect(self.game_window, green,
+                            pygame.Rect(pos[0], pos[1], 10, 10))
+            
+        pygame.draw.rect(self.game_window, white, pygame.Rect(
+            self.fruit.pos[0], self.fruit.pos[1], 10, 10))
+        
+        self.show_score(white, 'times new roman', 20)
+        pygame.display.update()
+        self.fps.tick(self.spd)
 
 
     def run(self):
@@ -78,6 +170,9 @@ class Game():
                         change_to = 'LEFT'
                     if event.key == pygame.K_RIGHT:
                         change_to = 'RIGHT'
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
 
             if change_to == 'UP' and direction != 'DOWN':
                 direction = 'UP'
@@ -98,37 +193,11 @@ class Game():
                 self.snake.move_right()
 
 
-            if self.snake.pos[0] == self.fruit.pos[0] and self.snake.pos[1] == self.fruit.pos[1]:
-                self.score += 10
-                self.snake.add_body()
-                self.create_new_fruit()
-
-
-            self.game_window.fill(black)
-     
-            for pos in self.snake.body:
-                pygame.draw.rect(self.game_window, green,
-                                pygame.Rect(pos[0], pos[1], 10, 10))
-                
-            pygame.draw.rect(self.game_window, white, pygame.Rect(
-                self.fruit.pos[0], self.fruit.pos[1], 10, 10))
+            self.check_head_fruit()
         
-            # Game Over conditions
-            if self.snake.pos[0] < 0 or self.snake.pos[0] > self.wx-10:
-                self.game_over()
-            if self.snake.pos[1] < 0 or self.snake.pos[1] > self.wy-10:
+            if self.check_collide():
                 self.game_over()
         
-            # Touching the snake body
-            for block in self.snake.body[0:-1]:
-                if self.snake.pos[0] == block[0] and self.snake.pos[1] == block[1]:
-                    self.game_over()
-        
-            # displaying score continuously
-            self.show_score(white, 'times new roman', 20)
-        
-            # Refresh game screen
-            pygame.display.update()
-        
-            # Frame Per Second /Refresh Rate
-            self.fps.tick(15)
+            self.update_ui()
+
+            
