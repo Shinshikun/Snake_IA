@@ -2,7 +2,7 @@ import pygame
 import time
 import random
 import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from snake import Snake
 from fruit import Fruit
@@ -47,6 +47,8 @@ class BaseGame(ABC):
             self.score += 10
             self.snake.add_body()
             self.create_new_fruit()
+            return True
+        return False
 
     def check_collide(self):
         if self.snake.pos[0] < 0 or self.snake.pos[0] > self.wx-10 or self.snake.pos[1] < 0 or self.snake.pos[1] > self.wy-10:
@@ -67,7 +69,7 @@ class Game_AI(BaseGame):
         self.direction = 1
 
 
-    def game_step(self, action):
+    def game_step(self, action) -> tuple(int, int, int):
         """action = [Devant, Droite, Gauche]"""
 
         reward = 0
@@ -98,7 +100,9 @@ class Game_AI(BaseGame):
                 self.snake.move_left()
             case 4: self.snake.move_right()
 
-        self.check_head_fruit()
+        if self.check_head_fruit():
+            reward = 1
+            return reward, game_over, self.score
         
         if self.check_collide():
             reward = -1
@@ -107,6 +111,8 @@ class Game_AI(BaseGame):
             return reward, game_over, self.score
         
         self.update_ui()
+
+        return reward, game_over, self.score
             
 
 
