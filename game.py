@@ -15,6 +15,7 @@ blue = pygame.Color(0, 0, 255)
 
 
 class BaseGame(ABC):
+    """ Classe de base pour la création d'une partie de Snake"""
 
     def __init__(self, wx=720, wy=480, title="Snake", spd=15):
         self.wx = wx
@@ -32,6 +33,8 @@ class BaseGame(ABC):
 
 
     def create_new_fruit(self):
+        """ Permet de placer un fruit à récupérer"""
+
         x=random.randrange(1, (self.wx//10)) * 10
         y=random.randrange(1, (self.wy//10)) * 10
 
@@ -42,6 +45,8 @@ class BaseGame(ABC):
         self.fruit = Fruit((x,y))
     
     def check_head_fruit(self):
+        """ Check si le serpent entre en collision avec le fruit """
+
         if self.snake.pos[0] == self.fruit.pos[0] and self.snake.pos[1] == self.fruit.pos[1]:
             self.score += 10
             self.snake.add_body()
@@ -50,6 +55,8 @@ class BaseGame(ABC):
         return False
 
     def check_collide(self):
+        """ Check si le serpent entre en collision avec son corps ou le bord de l'écran """
+
         if self.snake.pos[0] < 0 or self.snake.pos[0] > self.wx-10 or self.snake.pos[1] < 0 or self.snake.pos[1] > self.wy-10:
             return True
 
@@ -57,11 +64,27 @@ class BaseGame(ABC):
             return True
         
         return False
+    
+    def update_ui(self):
+        """ Permet de mettre à jour l'UI """
+        
+        self.game_window.fill(black)
+        for pos in self.snake.body:
+            pygame.draw.rect(self.game_window, green,
+                            pygame.Rect(pos[0], pos[1], 10, 10))
+            
+        pygame.draw.rect(self.game_window, white, pygame.Rect(
+            self.fruit.pos[0], self.fruit.pos[1], 10, 10))
+        
+        self.show_score(white, 'times new roman', 20)
+        pygame.display.update()
+        self.fps.tick(self.spd)
 
 
 
 
 class Game_AI(BaseGame):
+    """ Classe du jeu pour être utilisée par une IA """
 
     def __init__(self, wx=720, wy=480, title="Snake", spd=15):
         super().__init__(wx,wy,title,spd)
@@ -69,7 +92,10 @@ class Game_AI(BaseGame):
 
 
     def game_step(self, action) -> tuple(int, int, int):
-        """action = [Devant, Droite, Gauche]"""
+        """
+        Effectue une étape d'une partie
+        action = [Devant, Droite, Gauche]
+        """
 
         reward = 0
         game_over = False
@@ -115,22 +141,24 @@ class Game_AI(BaseGame):
     
 
     def reset(self):
+        """ Permet de réinitialiser la partie """
+
         self.direction =  1
         self.score = 0
         self.snake = Snake()
         
             
 
-
-
-
 class Game(BaseGame):
+    """ Classe du jeu permettant à un humain d'y jouer """
 
     def __init__(self, wx=720, wy=480, title="Snake", spd=15):
         super().__init__(wx, wy, title, spd)
 
 
     def show_score(self, color=white, font='times new roman', size=20):
+        """ Permet d'afficher le score à l'écran """
+
         score_font = pygame.font.SysFont(font, size)
         score_surface = score_font.render('Score : ' + str(self.score), True, color)
         score_rect = score_surface.get_rect()
@@ -138,6 +166,8 @@ class Game(BaseGame):
 
 
     def game_over(self):
+        """ Permet de passer à l'étape du game over et ferme ensuite le jeu """
+
         font = pygame.font.SysFont('times new roman', 50)
 
         game_over_surface = font.render(
@@ -153,21 +183,9 @@ class Game(BaseGame):
         quit()
 
 
-    def update_ui(self):
-        self.game_window.fill(black)
-        for pos in self.snake.body:
-            pygame.draw.rect(self.game_window, green,
-                            pygame.Rect(pos[0], pos[1], 10, 10))
-            
-        pygame.draw.rect(self.game_window, white, pygame.Rect(
-            self.fruit.pos[0], self.fruit.pos[1], 10, 10))
-        
-        self.show_score(white, 'times new roman', 20)
-        pygame.display.update()
-        self.fps.tick(self.spd)
-
-
     def run(self):
+        """ Permet de lancer la boucle du jeu """
+        
         direction = 'RIGHT'
         change_to = direction
         while True:
