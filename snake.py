@@ -1,7 +1,6 @@
 class Snake:
 
-    def __init__(self, spd=15, pos=[100,100]):
-        self.spd = spd
+    def __init__(self, pos=[100,100]):
         self.len = 4  
         self.pos = pos
         self.body = [[70,100], [80,100], [90,100], [100,100]]

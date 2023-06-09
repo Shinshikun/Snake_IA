@@ -25,7 +25,6 @@ class BaseGame(ABC):
         self.fruit = Fruit(pos=(random.randrange(1, (self.wx//10)) * 10,
                                 random.randrange(1, (self.wy//10)) * 10))
 
-        pygame.init()
         pygame.display.set_caption(title)
 
         self.game_window = pygame.display.set_mode((self.wx, self.wy))
@@ -113,6 +112,13 @@ class Game_AI(BaseGame):
         self.update_ui()
 
         return reward, game_over, self.score
+    
+
+    def reset(self):
+        self.direction =  1
+        self.score = 0
+        self.snake = Snake()
+        
             
 
 
