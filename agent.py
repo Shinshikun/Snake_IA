@@ -11,4 +11,5 @@ def Agent():
 
 
     def get_state_of_game(self, game: Game_AI) -> np.ndarray:
-        pass
+        snake_pos = game.snake.pos
+        
