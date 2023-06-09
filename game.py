@@ -44,7 +44,7 @@ class BaseGame(ABC):
 
         self.fruit = Fruit((x,y))
     
-    def check_head_fruit(self):
+    def check_head_fruit(self) -> bool:
         """ Check si le serpent entre en collision avec le fruit """
 
         if self.snake.pos[0] == self.fruit.pos[0] and self.snake.pos[1] == self.fruit.pos[1]:
@@ -54,16 +54,22 @@ class BaseGame(ABC):
             return True
         return False
 
-    def check_collide(self):
+    def check_collide(self, pos=None) -> bool:
         """ Check si le serpent entre en collision avec son corps ou le bord de l'écran """
 
-        if self.snake.pos[0] < 0 or self.snake.pos[0] > self.wx-10 or self.snake.pos[1] < 0 or self.snake.pos[1] > self.wy-10:
+        if pos is None:
+            pos = self.snake.pos
+
+        if pos[0] < 0 or pos[0] > self.wx-10 or pos[1] < 0 or pos[1] > self.wy-10:
             return True
 
-        if self.snake.pos in self.snake.body[:-1]:
+        if pos in self.snake.body[:-1]:
             return True
         
         return False
+    
+
+
     
     def update_ui(self):
         """ Permet de mettre à jour l'UI """
@@ -185,7 +191,7 @@ class Game(BaseGame):
 
     def run(self):
         """ Permet de lancer la boucle du jeu """
-        
+
         direction = 'RIGHT'
         change_to = direction
         while True:
